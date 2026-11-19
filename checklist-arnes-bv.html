@@ -39,7 +39,7 @@ input:focus,textarea:focus{outline:none;border-color:var(--navy2)}
 .row .bt{display:flex;gap:6px}
 .row .bt button{width:44px;height:42px;border-radius:9px;border:2px solid var(--line);background:#fff;font-size:20px;font-weight:800;cursor:pointer;color:#222;padding:0}
 .row .bt button.y.sel{background:var(--ok);border-color:var(--ok);color:#fff}
-.row .bt button.n.sel{background:var(--bad);border-color:var(--bad);color:#fff}
+.row .bt button.x.sel{background:var(--bad);border-color:var(--bad);color:#fff}
 .row .bt button.c.has{border-color:var(--navy2);background:#e9eefb}
 .row .obs{grid-column:2/4;display:none;margin-right:6px}.row .obs.show{display:block}
 .row .obs textarea{min-height:60px;font-size:15px;padding:10px}
@@ -557,8 +557,8 @@ const S={area:"",r:{},obs:{}};
 function chips(id,list){$(id).innerHTML=list.map(x=>`<button type="button">${esc(x)}</button>`).join("");$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{S[$(id).dataset.k]=b.textContent;$(id).querySelectorAll("button").forEach(x=>x.classList.toggle("sel",x===b));state()})}
 chips("area",AREAS);
 // lista
-$("lista").innerHTML=ITEMS.map(([t,d],i)=>{const k=i+1;return`<div class="row" data-k="${k}"><div class="n">${k}</div><div><h5>${t}</h5><p>${d}</p></div><div class="bt"><button type="button" class="y" aria-label="Cumple">✓</button><button type="button" class="n" aria-label="No cumple">✗</button><button type="button" class="c" aria-label="Comentario">💬</button></div><div class="obs"><textarea placeholder="Observación (opcional)"></textarea></div></div>`}).join("");
-document.querySelectorAll(".row").forEach(r=>{const k=r.dataset.k,y=r.querySelector(".y"),n=r.querySelector(".n"),c=r.querySelector(".c"),o=r.querySelector(".obs"),ta=r.querySelector("textarea");
+$("lista").innerHTML=ITEMS.map(([t,d],i)=>{const k=i+1;return`<div class="row" data-k="${k}"><div class="n">${k}</div><div><h5>${t}</h5><p>${d}</p></div><div class="bt"><button type="button" class="y" aria-label="Cumple">✓</button><button type="button" class="x" aria-label="No cumple">✗</button><button type="button" class="c" aria-label="Comentario">💬</button></div><div class="obs"><textarea placeholder="Observación (opcional)"></textarea></div></div>`}).join("");
+document.querySelectorAll(".row").forEach(r=>{const k=r.dataset.k,y=r.querySelector(".y"),n=r.querySelector(".x"),c=r.querySelector(".c"),o=r.querySelector(".obs"),ta=r.querySelector("textarea");
  y.onclick=()=>{S.r[k]="1";y.classList.add("sel");n.classList.remove("sel");state()};
  n.onclick=()=>{S.r[k]="0";n.classList.add("sel");y.classList.remove("sel");o.classList.add("show");ta.placeholder="Describa el defecto encontrado";state()};
  c.onclick=()=>{o.classList.toggle("show");if(o.classList.contains("show"))ta.focus()};
@@ -570,7 +570,11 @@ try{$("prev").value=localStorage.getItem("bv_arnes_prev")||"";$("mio").value=loc
 const rutClean=v=>String(v).replace(/[.\s]/g,"").toUpperCase();
 function rutOk(v){const r=rutClean(v);if(!/^\d{7,8}-[\dK]$/.test(r))return false;const[num,dv]=r.split("-");let s=0,m=2;for(let i=num.length-1;i>=0;i--){s+=+num[i]*m;m=m===7?2:m+1}const x=11-(s%11);return(x===11?"0":x===10?"K":String(x))===dv}
 const mailOk=v=>/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(v.trim());
+// ===== ENVÍO AUTOMÁTICO (Google Apps Script). Pegue aquí la URL /exec; vacío = envío manual =====
+const ENVIO_URL="";
+const PREV_FIJO="gabrielhernan.roa@gmail.com";
 const to=()=>[$("prev").value.trim(),$("mio").value.trim()].filter(Boolean);
+if(ENVIO_URL||PREV_FIJO){if(!$("prev").value)$("prev").value=PREV_FIJO;if(ENVIO_URL){$("prev").value=PREV_FIJO;$("prev").readOnly=true}}
 if(!mailOk($("prev").value))$("env").open=true;
 let signed=false,strokes=[];
 function state(){
@@ -611,7 +615,7 @@ function buildPdf(bad){
   // encabezado
   doc.setDrawColor(...NAVY);doc.setLineWidth(.5);doc.rect(6,6,W-12,H-12);
   doc.setFillColor(...NAVY);doc.rect(6,6,W-12,24,"F");doc.setFillColor(200,16,46);doc.rect(6,30,W-12,1.4,"F");
-  if(logoPng)doc.addImage(logoPng,"PNG",L,8,17.4,20);
+  if(logoPng)doc.addImage(logoPng,"PNG",L,8,17.4,20,"logo","FAST");
   y=15;t("CESMEC · Bureau Veritas",RR,12,true,[255,255,255],"right");y=21;t("Check List Pre-Uso",RR,9.5,false,[255,255,255],"right");y=26.5;t("Arnés de Cuerpo Entero y Línea de Vida",RR,10,true,[255,255,255],"right");
   // datos generales
   band("DATOS GENERALES",GR,35);
@@ -642,7 +646,7 @@ function buildPdf(bad){
   y=by+5.5;t("RESPONSABLE",L+3,8,true,NAVY);y=by+11;t(fit1($("nombre").value,90,10),L+3,10,true);y=by+16;t("RUT: "+rutClean($("rut").value),L+3,9.2);y=by+21;t("Enviado a: "+fit1(to().join(", "),95,7.6),L+3,7.6,false,GRY);
   const w=330,h=190,c2=document.createElement("canvas");c2.width=w*2;c2.height=h*2;const x2=c2.getContext("2d");x2.fillStyle="#fff";x2.fillRect(0,0,c2.width,c2.height);const kk=Math.min(w/sz[0],h/sz[1]);
   x2.scale(2*kk,2*kk);x2.lineWidth=2.6/kk;x2.lineCap="round";x2.lineJoin="round";x2.strokeStyle="#111";strokes.forEach(s=>{x2.beginPath();x2.moveTo(s[0][0],s[0][1]);s.forEach(p=>x2.lineTo(p[0],p[1]));x2.stroke()});
-  const sh=17,swd=sh*w/h,SX=RR-4-Math.max(swd,60);y=by+5.5;t("FIRMA",SX,8,true,NAVY);doc.addImage(c2.toDataURL("image/png"),"PNG",SX,by+7,swd,sh);doc.setDrawColor(150,150,150);doc.setLineWidth(.2);doc.line(SX,by+7.5+sh,RR-4,by+7.5+sh);
+  const sh=17,swd=sh*w/h,SX=RR-4-Math.max(swd,60);y=by+5.5;t("FIRMA",SX,8,true,NAVY);doc.addImage(c2.toDataURL("image/png"),"PNG",SX,by+7,swd,sh,undefined,"FAST");doc.setDrawColor(150,150,150);doc.setLineWidth(.2);doc.line(SX,by+7.5+sh,RR-4,by+7.5+sh);
   doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(...GRY);doc.text("CESMEC · Bureau Veritas — Registro pre-uso de EPP para trabajo en altura. Imágenes referenciales generadas con IA.",L,H-9);
   pdfName="checklist-arnes-"+$("fecha").value.replace(/[-:]/g,"").replace("T","-")+".pdf";pdfBlob=doc.output("blob");
  }catch(e){console.error(e);pdfBlob=null}
@@ -657,6 +661,17 @@ async function savePdf(){
 }
 function subj(){return`Check List Pre-Uso Arnés - ${isBad?"NO APTO":"APTO"} - ${$("planta").value} - ${$("nombre").value}`}
 function body(){return`Check List Pre-Uso Arnés de Cuerpo Entero (CESMEC · Bureau Veritas)\nResponsable: ${$("nombre").value} (${rutClean($("rut").value)})\nPlanta / Área: ${$("planta").value} / ${S.area}\nFecha: ${$("fecha").value.replace("T"," ")}\nResultado: ${isBad?"NO APTO PARA EL USO":"APTO PARA EL USO"}`}
+function b64(blob){return new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(",")[1]);r.onerror=ko;r.readAsDataURL(blob)})}
+async function sendAuto(){
+ if(!ENVIO_URL||!pdfBlob)return false;
+ const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),60000);
+ try{const res=await fetch(ENVIO_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},signal:ctl.signal,body:JSON.stringify({
+   pdf:await b64(pdfBlob),archivo:pdfName,asunto:subj(),cuerpo:body(),copia:$("mio").value.trim(),
+   nombre:$("nombre").value,rut:rutClean($("rut").value),planta:$("planta").value,area:S.area,fecha:$("fecha").value.replace("T"," "),
+   resultado:isBad?"NO APTO":"APTO"})});
+  const j=await res.json();if(j&&j.ok)return j;throw new Error(j&&j.error||"error")}
+ catch(e){console.error(e);sendAuto.err=e&&e.name==="AbortError"?"el servidor no respondió a tiempo":(e&&e.message&&e.message!=="error"&&!/fetch|JSON|network/i.test(e.message))?e.message:"sin conexión con el servidor de correo";return false}finally{clearTimeout(tm)}
+}
 async function share(){
  if(!pdfBlob)return false;
  if(!inFrame){try{const f=new File([pdfBlob],pdfName,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:subj(),text:body()+"\n\nPara: "+to().join(", ")});return"shared"}}catch(e){if(e&&e.name==="AbortError")return false}}
@@ -673,7 +688,17 @@ $("enviar").onclick=async()=>{
   const pl=JSON.parse(localStorage.getItem("bv_arnes_plantas")||"[]"),v=$("planta").value.trim();localStorage.setItem("bv_arnes_plantas",JSON.stringify([v,...pl.filter(x=>x!==v)].slice(0,8)))}catch(e){}
  buildPdf(bad);
  $("mRes").className="res "+(bad?"bad":"ok");$("mRes").textContent=bad?`NO APTO PARA EL USO (${bad} no cumple)`:"APTO PARA EL USO";
- const r=await share();
+ let r;
+ if(ENVIO_URL){$("mIc").textContent="⏳";$("mT").textContent="Enviando…";$("mMsg").textContent="Enviando el PDF a Prevención, espere unos segundos.";
+  ["mMail","mPdf","mNew"].forEach(i=>$(i).disabled=true);$("modal").classList.add("show");
+  const j=await sendAuto();["mMail","mPdf","mNew"].forEach(i=>$(i).disabled=false);
+  if(j){$("mIc").textContent="✅";$("mT").textContent="Check List enviado";$("mMsg").innerHTML="El PDF se envió por correo a:<br><b>"+(j.para||to()).map(esc).join("<br>")+"</b>";
+   $("mMail").style.display="none";$("modal").classList.add("show");return}
+  // Falló el envío automático: no se abre "Compartir" solo (el navegador lo bloquea tras la espera); el usuario toca el botón
+  $("mIc").textContent="⚠️";$("mT").textContent="No se pudo enviar automáticamente";
+  $("mMsg").innerHTML="Motivo: "+esc(sendAuto.err||"error desconocido")+".<br>Toque “Enviar a Prevención” para mandar el PDF manualmente a:<br><b>"+to().map(esc).join("<br>")+"</b>";
+  $("mMail").textContent="✉️ Enviar a Prevención";$("modal").classList.add("show");return}
+ else r=await share();
  if(r==="shared"){$("mIc").textContent="✅";$("mT").textContent="Check List enviado";$("mMsg").innerHTML="Check List completado.<br><small>Destinatarios: "+to().map(esc).join(", ")+"</small>";$("mMail").textContent="✉️ Enviar de nuevo"}
  else if(r==="mail"){$("mIc").textContent="📄";$("mT").textContent="PDF listo";$("mMsg").innerHTML="Adjunte el PDF descargado al correo para:<br><b>"+to().map(esc).join("<br>")+"</b>";$("mMail").textContent="✉️ Abrir correo de nuevo"}
  else{$("mIc").textContent="📄";$("mT").textContent="Check List completado";if(!$("mMsg").textContent||$("mMsg").textContent==="Check List completado.")$("mMsg").innerHTML="Toque “Enviar a Prevención” para mandar el PDF a:<br><b>"+to().map(esc).join("<br>")+"</b>"}
