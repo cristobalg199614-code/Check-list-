@@ -571,7 +571,7 @@ const rutClean=v=>String(v).replace(/[.\s]/g,"").toUpperCase();
 function rutOk(v){const r=rutClean(v);if(!/^\d{7,8}-[\dK]$/.test(r))return false;const[num,dv]=r.split("-");let s=0,m=2;for(let i=num.length-1;i>=0;i--){s+=+num[i]*m;m=m===7?2:m+1}const x=11-(s%11);return(x===11?"0":x===10?"K":String(x))===dv}
 const mailOk=v=>/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(v.trim());
 // ===== ENVÍO AUTOMÁTICO (Google Apps Script). Pegue aquí la URL /exec; vacío = envío manual =====
-const ENVIO_URL="";
+const ENVIO_URL="https://script.google.com/macros/s/AKfycbz09NWv5j3SRtSNHdRX4gLrmGpesSRqhjnoI4WSaMo8F4v7JKpa9rxyEUeWEdwz97KozA/exec";
 const PREV_FIJO="gabrielhernan.roa@gmail.com";
 const to=()=>[$("prev").value.trim(),$("mio").value.trim()].filter(Boolean);
 if(ENVIO_URL||PREV_FIJO){if(!$("prev").value)$("prev").value=PREV_FIJO;if(ENVIO_URL){$("prev").value=PREV_FIJO;$("prev").readOnly=true}}
